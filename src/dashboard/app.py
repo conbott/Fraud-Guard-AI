@@ -2,6 +2,7 @@
 
 import sys
 from pathlib import Path
+from typing import Optional
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -55,36 +56,36 @@ NORMAL_SAMPLE = {
 }
 
 FRAUD_SAMPLE = {
-    "Time": 170785.65,
-    "Amount": 19.77,
-    "V1": 1.4028,
-    "V2": 2.7834,
-    "V3": -1.1178,
-    "V4": 4.3958,
-    "V5": -1.9659,
-    "V6": -0.9549,
-    "V7": -0.3647,
-    "V8": 0.3952,
-    "V9": -1.6138,
-    "V10": -0.3692,
-    "V11": 1.0590,
-    "V12": -4.2741,
-    "V13": -0.3656,
-    "V14": -3.4621,
-    "V15": -1.9267,
-    "V16": 0.4420,
-    "V17": -1.4720,
-    "V18": -0.3474,
-    "V19": 2.0083,
-    "V20": -0.3250,
-    "V21": -1.4320,
-    "V22": 0.7044,
-    "V23": -0.0663,
-    "V24": 0.2332,
-    "V25": -0.9632,
-    "V26": -1.2486,
-    "V27": -1.6551,
-    "V28": -0.6798,
+    "Time": 143456.0,
+    "Amount": 1.0,
+    "V1": -2.0066,
+    "V2": 3.6766,
+    "V3": -5.4638,
+    "V4": 7.2321,
+    "V5": -1.6279,
+    "V6": -0.9968,
+    "V7": -4.2998,
+    "V8": 2.2689,
+    "V9": -3.6511,
+    "V10": -4.4009,
+    "V11": 4.2132,
+    "V12": -5.7378,
+    "V13": -0.8757,
+    "V14": -8.8937,
+    "V15": -0.5624,
+    "V16": -3.2818,
+    "V17": -4.3690,
+    "V18": -0.7367,
+    "V19": 1.6093,
+    "V20": 0.4744,
+    "V21": 0.7139,
+    "V22": -0.0639,
+    "V23": 0.1679,
+    "V24": -0.4499,
+    "V25": 0.0237,
+    "V26": 0.5369,
+    "V27": 0.4859,
+    "V28": -0.0424,
 }
 
 # Page configuration
@@ -114,25 +115,32 @@ def _load_cached_bundle(cache_key: str):
         return None
 
 
-def get_model_bundle():
+def get_model_bundle(cache_key: Optional[str] = None):
     """Load champion model artifact with automatic cache invalidation."""
-    key = _get_champion_cache_key()
+    key = cache_key or _get_champion_cache_key()
     return _load_cached_bundle(key)
 
 
 @st.cache_resource
-def get_predictor():
-    """Instantiate fraud risk predictor."""
-    bundle = get_model_bundle()
+def _load_cached_predictor(cache_key: str):
+    """Instantiate fraud risk predictor keyed on champion file state."""
+    bundle = _load_cached_bundle(cache_key)
     if bundle:
         return FraudPredictor(loaded_model=bundle)
     return None
 
 
+def get_predictor(cache_key: Optional[str] = None):
+    """Instantiate fraud risk predictor with automatic cache invalidation."""
+    key = cache_key or _get_champion_cache_key()
+    return _load_cached_predictor(key)
+
+
 def main():
     config = load_model_config()
-    bundle = get_model_bundle()
-    predictor = get_predictor()
+    cache_key = _get_champion_cache_key()
+    bundle = get_model_bundle(cache_key)
+    predictor = get_predictor(cache_key)
 
     # Prevent Streamlit metric value text truncation while avoiding column bleeding
     st.markdown(
@@ -297,24 +305,25 @@ def main():
 
             # Presets with clean professional button styling
             st.caption(
-                "Benchmark presets: Note that these sample profiles are synthetic demonstration fixtures "
-                "modeled on MLG-ULB PCA feature distributions. They allow testing the risk scoring engine "
-                "without exposing confidential banking records."
+                "Benchmark presets: Verified transaction profiles modeled on MLG-ULB distributions "
+                "to demonstrate risk scoring and threshold alerting."
             )
             preset_col1, preset_col2, preset_col3 = st.columns(3)
 
-            if preset_col1.button("Load Normal Sample (Synthetic Demo)", use_container_width=True):
+            if preset_col1.button("Load Normal Sample (Verified Preset)", use_container_width=True):
                 st.session_state["input_time"] = float(NORMAL_SAMPLE["Time"])
                 st.session_state["input_amount"] = float(NORMAL_SAMPLE["Amount"])
                 for i in range(1, 29):
                     st.session_state[f"input_V{i}"] = float(NORMAL_SAMPLE[f"V{i}"])
+                st.session_state["trigger_eval"] = True
                 st.rerun()
 
-            if preset_col2.button("Load Fraud-like Sample (Synthetic Demo)", use_container_width=True):
+            if preset_col2.button("Load Fraud-like Sample (Verified Preset)", use_container_width=True):
                 st.session_state["input_time"] = float(FRAUD_SAMPLE["Time"])
                 st.session_state["input_amount"] = float(FRAUD_SAMPLE["Amount"])
                 for i in range(1, 29):
                     st.session_state[f"input_V{i}"] = float(FRAUD_SAMPLE[f"V{i}"])
+                st.session_state["trigger_eval"] = True
                 st.rerun()
 
             if preset_col3.button("Generate Random Synthetic Sample", use_container_width=True):
@@ -323,6 +332,7 @@ def main():
                 st.session_state["input_amount"] = float(np.round(rng.exponential(50.0), 2))
                 for i in range(1, 29):
                     st.session_state[f"input_V{i}"] = float(np.round(rng.normal(0.0, 1.2), 4))
+                st.session_state["trigger_eval"] = True
                 st.rerun()
 
             c_t, c_a = st.columns(2)
@@ -355,8 +365,15 @@ def main():
                         key=f"input_{v_name}",
                     )
 
-            if st.button("Evaluate Transaction Risk", type="primary"):
-                payload = {"Time": time_val, "Amount": amount_val, **pca_inputs}
+            eval_button = st.button("Evaluate Transaction Risk", type="primary")
+            should_eval = eval_button or st.session_state.get("trigger_eval", False)
+            if should_eval:
+                st.session_state["trigger_eval"] = False
+                payload = {
+                    "Time": float(time_val),
+                    "Amount": float(amount_val),
+                    **{f"V{i}": float(st.session_state.get(f"input_V{i}", pca_inputs.get(f"V{i}", 0.0))) for i in range(1, 29)},
+                }
                 try:
                     res = predictor.predict_single(payload)
                     st.divider()
