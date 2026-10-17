@@ -62,14 +62,14 @@ To ensure complete data integrity, models are evaluated across both **Stratified
 ## 5. Why Precision-Recall AUC Governs Imbalanced Fraud Detection
 In highly skewed environments (99.83% negative class), standard accuracy and ROC-AUC can provide dangerously misleading assessments:
 1. **The Accuracy Paradox:** A trivial model predicting `Class = 0` for all transactions achieves 99.83% accuracy while detecting 0 frauds (Recall = 0.0). Accuracy evaluates true negatives equally with true positives, which masks complete minority-class failure.
-2. **ROC-AUC Insensitivity:** ROC-AUC plots True Positive Rate vs False Positive Rate. Because the denominator for FPR is the colossal negative class ($N = 56,864$), even 200 false alarms yield an FPR of only $0.0035$, keeping the ROC curve near the top-left corner ($ROC-AUC > 0.97$).
+2. **ROC-AUC Insensitivity:** ROC-AUC plots True Positive Rate vs False Positive Rate. Because the denominator for FPR is the colossal negative class ($N = TN + FP = 56,864$ out of $56,962$ test transactions), even 200 false alarms yield an FPR of only $0.0035$, keeping the ROC curve near the top-left corner ($ROC-AUC > 0.97$).
 3. **PR-AUC Dominance:** Precision-Recall AUC focuses exclusively on positive predictions and true positive captures. It directly measures how many genuine alerts are generated for each false positive. Random guessing yields a baseline PR-AUC equal to the positive prevalence ($0.0017$). Achieving $PR-AUC = 0.8140$ confirms that high precision is maintained even as recall is driven above 80%.
 
 ---
 
 ## 6. Ethical Considerations & Operational Economics
 1. **Privacy Safeguards:** Feature sets $V_1$ through $V_{28}$ are anonymized PCA projections. No personally identifiable information (PII), names, card numbers, physical addresses, or merchant names are ingested or logged.
-2. **False Positive Economics (Customer Friction):** Declining or challenging legitimate cardholder transactions damages card usage, brand loyalty, and merchant conversion rates. The Champion Random Forest limits test false alarms to 19 out of 56,864 transactions (False Positive Rate = 0.033%), preserving customer trust.
+2. **False Positive Economics (Customer Friction):** Declining or challenging legitimate cardholder transactions damages card usage, brand loyalty, and merchant conversion rates. The Champion Random Forest limits test false alarms to 19 out of the 56,864 negative-class transactions (TN + FP = 56,864; complete test partition = 56,962; False Positive Rate = 0.033%), preserving customer trust.
 3. **False Negative Economics (Chargeback Loss):** Undetected fraud incurs direct merchant write-offs, dispute fees ($15-$50 per chargeback), and interchange penalization. The model successfully detects 80 out of 98 test fraud events ($81.63\%$ recall), mitigating over 80% of aggregate loss.
 4. **Fairness & Demographic Neutrality:** Because demographic proxies (age, gender, ethnicity) are excluded, disparate impact across customer segments is structurally suppressed.
 

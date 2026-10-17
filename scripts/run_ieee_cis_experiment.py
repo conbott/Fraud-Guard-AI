@@ -204,11 +204,12 @@ def load_and_preprocess_ieee(raw_dir: Path, mock: bool = False, max_rows: int = 
     return df
 
 
-def run_experiment(df: pd.DataFrame) -> Dict[str, Any]:
+def run_experiment(df: pd.DataFrame, is_mock: bool = True) -> Dict[str, Any]:
     """Execute chronological split, threshold tuning, and model evaluation.
 
     Args:
         df: Prepared DataFrame with 'TransactionDT' and 'isFraud'.
+        is_mock: Whether the dataset was generated from mock fixture.
 
     Returns:
         Dictionary of experiment results, metrics, and parameters.
@@ -231,19 +232,42 @@ def run_experiment(df: pd.DataFrame) -> Dict[str, Any]:
     x_val, y_val = val_df[feature_cols], val_df[target_col].to_numpy()
     x_test, y_test = test_df[feature_cols], test_df[target_col].to_numpy()
 
+    train_frauds = int(y_train.sum())
+    val_frauds = int(y_val.sum())
+    test_frauds = int(y_test.sum())
+    test_legit = int((y_test == 0).sum())
+
     logger.info("Chronological Split Breakdown:")
     logger.info("  Train: %d rows (Frauds: %d, Rate: %.3f%%)",
-                len(train_df), int(y_train.sum()), float(y_train.mean() * 100))
+                len(train_df), train_frauds, float(y_train.mean() * 100))
     logger.info("  Val:   %d rows (Frauds: %d, Rate: %.3f%%)",
-                len(val_df), int(y_val.sum()), float(y_val.mean() * 100))
+                len(val_df), val_frauds, float(y_val.mean() * 100))
     logger.info("  Test:  %d rows (Frauds: %d, Rate: %.3f%%)",
-                len(test_df), int(y_test.sum()), float(y_test.mean() * 100))
+                len(test_df), test_frauds, float(y_test.mean() * 100))
 
     results: Dict[str, Any] = {
-        "dataset": "IEEE-CIS Fraud Detection",
+        "dataset": "IEEE-CIS Fraud Detection (Synthetic Mock Fixture)" if is_mock else "IEEE-CIS Fraud Detection",
+        "provenance": "synthetic_mock_fixture" if is_mock else "real_kaggle_dataset",
+        "is_synthetic": is_mock,
         "sample_size": n_total,
         "feature_count": len(feature_cols),
         "split_method": "Chronological (TransactionDT)",
+        "split_counts": {
+            "train": {"total": len(train_df), "frauds": train_frauds, "prevalence": round(float(y_train.mean()), 6)},
+            "val": {"total": len(val_df), "frauds": val_frauds, "prevalence": round(float(y_val.mean()), 6)},
+            "test": {
+                "total": len(test_df),
+                "frauds": test_frauds,
+                "legitimate": test_legit,
+                "prevalence": round(float(y_test.mean()), 6),
+            },
+        },
+        "verification_note": (
+            "Evaluated on a synthetic mock fixture generated with IEEE-CIS schema and chronological "
+            "timesteps. The official 1.43 GB Kaggle IEEE-CIS dataset was not downloaded locally."
+            if is_mock
+            else "Evaluated on genuine Kaggle IEEE-CIS dataset."
+        ),
         "models": {},
     }
 
@@ -323,7 +347,7 @@ def main() -> None:
         return
 
     df = load_and_preprocess_ieee(raw_dir=RAW_DATA_DIR, mock=args.mock, max_rows=args.max_rows)
-    results = run_experiment(df)
+    results = run_experiment(df, is_mock=args.mock)
 
     REPORTS_DIR.mkdir(parents=True, exist_ok=True)
     report_file = REPORTS_DIR / "ieee_cis_evaluation.json"

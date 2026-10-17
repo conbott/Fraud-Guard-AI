@@ -479,6 +479,8 @@ def main():
                 with open(ieee_report_path, "r", encoding="utf-8") as f:
                     ieee_data = json.load(f)
                 st.markdown(f"**Dataset:** `{ieee_data.get('dataset')}` | **Split Method:** `{ieee_data.get('split_method')}`")
+                if ieee_data.get("verification_note"):
+                    st.info(f"Provenance: {ieee_data.get('verification_note')}")
                 ieee_rows = []
                 for m_name, m_vals in ieee_data.get("models", {}).items():
                     ieee_rows.append({

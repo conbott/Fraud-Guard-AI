@@ -78,8 +78,8 @@ The MLG-ULB Credit Card Fraud Detection dataset contains 284,807 transactions wi
 | **Random Forest** | 0.34 | **0.7508** | **0.8350** | **0.8151** | **0.9547** | **0.8906** | **0.7600** | **0.8201** | **0.000123** | **57 / 7 / 56,879 / 18** |
 
 ### Split Trade-offs & Empirical Analysis:
-- **Stratified Split:** Preserves exact positive class prevalence (0.1727%) uniformly across all three partitions. Random Forest achieves balanced test precision (80.81%) and recall (81.63%), producing only 19 false alarms across 56,864 transactions (FPR = 0.033%).
-- **Chronological Split:** Reflects realistic deployment where models are trained on past data and evaluated on future transactions. In the chronological split, fraud prevalence shifts from 0.2107% in training to 0.1001% in validation and 0.1317% in the test window. Random Forest achieves 89.06% precision with 76.00% recall and only 7 false alarms across 56,886 test transactions (FPR = 0.012%), confirming resilience to temporal distribution shifts.
+- **Stratified Split:** Preserves exact positive class prevalence (0.1727%) uniformly across all three partitions (170,883 Train | 56,962 Val | 56,962 Test). Random Forest achieves balanced test precision (80.81%) and recall (81.63%), producing only 19 false alarms across the 56,864 negative-class transactions (TN + FP = 56,864; False Positive Rate = 0.033%; complete test partition = 56,962 transactions: 56,845 TN + 19 FP + 80 TP + 18 FN).
+- **Chronological Split:** Reflects realistic deployment where models are trained on past data and evaluated on future transactions (170,885 Train | 56,961 Val | 56,961 Test). In the chronological split, fraud prevalence shifts from 0.2107% in training (360 frauds) to 0.1001% in validation (57 frauds) and 0.1317% in the test window (75 frauds). Random Forest achieves 89.06% precision with 76.00% recall and only 7 false alarms across the 56,886 negative-class transactions (TN + FP = 56,886; False Positive Rate = 0.012%; complete test partition = 56,961 transactions: 56,879 TN + 7 FP + 57 TP + 18 FN), confirming resilience to temporal distribution shifts.
 
 ---
 

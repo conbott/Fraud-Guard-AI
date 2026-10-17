@@ -49,7 +49,9 @@ def test_ieee_mock_experiment_execution():
         df_downcast[col] = df_downcast[col].astype("category").cat.codes
 
     results = run_experiment(df_downcast)
-    assert results["dataset"] == "IEEE-CIS Fraud Detection"
+    assert results["dataset"] == "IEEE-CIS Fraud Detection (Synthetic Mock Fixture)"
+    assert results["provenance"] == "synthetic_mock_fixture"
+    assert results["is_synthetic"] is True
     assert "dummy_baseline" in results["models"]
     assert "hist_gradient_boosting" in results["models"]
 

@@ -1,8 +1,29 @@
 {
-  "dataset": "IEEE-CIS Fraud Detection",
+  "dataset": "IEEE-CIS Fraud Detection (Synthetic Mock Fixture)",
+  "provenance": "synthetic_mock_fixture",
+  "is_synthetic": true,
   "sample_size": 5000,
   "feature_count": 32,
   "split_method": "Chronological (TransactionDT)",
+  "split_counts": {
+    "train": {
+      "total": 3500,
+      "frauds": 137,
+      "prevalence": 0.039143
+    },
+    "val": {
+      "total": 750,
+      "frauds": 24,
+      "prevalence": 0.032
+    },
+    "test": {
+      "total": 750,
+      "frauds": 17,
+      "legitimate": 733,
+      "prevalence": 0.022667
+    }
+  },
+  "verification_note": "Evaluated on a synthetic mock fixture generated with IEEE-CIS schema and chronological timesteps. The official 1.43 GB Kaggle IEEE-CIS dataset was not downloaded locally.",
   "models": {
     "dummy_baseline": {
       "pr_auc": 0.02306343713956171,
