@@ -41,13 +41,13 @@ jobs:
         run: |
           python scripts/validate_data.py --data-path data/synthetic/test_fixture.csv
 
+      - name: Train Champion Model Smoke Test
+        run: |
+          python scripts/train.py --data-path data/synthetic/test_fixture.csv --champion
+
       - name: Run Unit and Integration Tests
         run: |
           pytest tests/ -v --cov=src --cov-report=term-missing
-
-      - name: Run Model Training Smoke Test
-        run: |
-          python scripts/train.py --data-path data/synthetic/test_fixture.csv --champion
 
       - name: Run Drift Monitoring Smoke Test
         run: |

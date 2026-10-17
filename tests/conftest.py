@@ -8,6 +8,22 @@ import pytest
 from src.data.synthetic import generate_synthetic_transactions
 
 
+@pytest.fixture(scope="session", autouse=True)
+def ensure_champion_model():
+    """Ensure a valid, compatible champion model artifact exists before any tests run."""
+    from src.config import load_model_config
+    from src.inference.loader import ModelLoader
+    from src.training.train import ModelTrainer
+
+    cfg = load_model_config()
+    model_file = cfg.champion_dir / "model.joblib"
+    try:
+        ModelLoader.load_model_from_file(model_file)
+    except Exception:
+        trainer = ModelTrainer(cfg)
+        trainer.train_pipeline(is_champion=True)
+
+
 @pytest.fixture(scope="session")
 def synthetic_df() -> pd.DataFrame:
     """Session-scoped reproducible synthetic dataframe."""
