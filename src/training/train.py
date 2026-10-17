@@ -44,6 +44,7 @@ class ModelTrainer:
         data_path: Optional[Path] = None,
         save_candidate: bool = True,
         is_champion: bool = False,
+        split_strategy: Optional[str] = None,
     ) -> Dict[str, Any]:
         """Execute the end-to-end training pipeline."""
         start_time = time.time()
@@ -62,8 +63,38 @@ class ModelTrainer:
         df = pd.read_csv(path)
         dataset_fingerprint = compute_dataset_fingerprint(df)
 
+        is_real_ulb = (
+            path.resolve() == self.config.raw_data_path.resolve()
+            or "creditcard.csv" in path.name.lower()
+        )
+        dataset_name = (
+            "MLG-ULB Credit Card Fraud Detection"
+            if is_real_ulb
+            else "Synthetic Data Simulation"
+        )
+
         # 2. Leakage-safe split
-        X_train, y_train, X_val, y_val, X_test, y_test = self.loader.split_data(df)
+        strat = split_strategy or self.config.split.strategy
+        X_train, y_train, X_val, y_val, X_test, y_test = self.loader.split_data(
+            df, strategy=strat
+        )
+
+        provenance = {
+            "dataset_name": dataset_name,
+            "dataset_path": str(path),
+            "is_synthetic": not is_real_ulb,
+            "total_samples": len(df),
+            "fraud_samples": int(df[self.config.target_column].sum()),
+            "prevalence": round(float(df[self.config.target_column].mean()), 6),
+            "split_strategy": strat,
+            "train_samples": len(y_train),
+            "train_frauds": int(y_train.sum()),
+            "val_samples": len(y_val),
+            "val_frauds": int(y_val.sum()),
+            "test_samples": len(y_test),
+            "test_frauds": int(y_test.sum()),
+            "random_seed": self.config.random_seed,
+        }
 
         # 3. Fit preprocessor ONLY on training partition
         preprocessor = FraudFeaturePreprocessor(self.config)
@@ -189,6 +220,7 @@ class ModelTrainer:
             "timestamp": timestamp_str,
             "duration_seconds": duration,
             "dataset_fingerprint": dataset_fingerprint,
+            "provenance": provenance,
             "random_seed": seed,
             "feature_names": preprocessor.feature_names_,
             "optimal_threshold": best_threshold,
@@ -215,12 +247,34 @@ class ModelTrainer:
         model_file = save_dir / "model.joblib"
         metadata_file = save_dir / "metadata.json"
 
-        joblib.dump(artifact_bundle, model_file)
+        joblib.dump(artifact_bundle, model_file, compress=3)
 
         # Exclude unpickled model object for JSON metadata
         meta_dict = {k: v for k, v in artifact_bundle.items() if k not in ("model", "preprocessor")}
         with open(metadata_file, "w", encoding="utf-8") as f:
             json.dump(meta_dict, f, indent=2)
+
+        # Save structured evaluation report
+        self.config.reports_dir.mkdir(parents=True, exist_ok=True)
+        report_data = {
+            "version": version_id,
+            "timestamp": timestamp_str,
+            "provenance": provenance,
+            "selected_model": best_model_name,
+            "optimal_threshold": best_threshold,
+            "model_comparison": comparison_results,
+            "val_metrics": best_val_metrics.to_dict() if best_val_metrics else {},
+            "test_metrics": test_metrics.to_dict(),
+            "environment": artifact_bundle["environment"],
+        }
+        report_file = self.config.reports_dir / f"evaluation_report_{version_id}.json"
+        with open(report_file, "w", encoding="utf-8") as f:
+            json.dump(report_data, f, indent=2)
+
+        if is_real_ulb:
+            canonical_report = self.config.reports_dir / "ulb_evaluation_report.json"
+            with open(canonical_report, "w", encoding="utf-8") as f:
+                json.dump(report_data, f, indent=2)
 
         # 10. Log to MLflow
         self.tracker.log_params({

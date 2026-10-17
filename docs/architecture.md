@@ -2,7 +2,7 @@
 
 ## Architecture Overview
 
-FraudGuard AI is designed as a modular, production-grade MLOps system built with Python 3.11+, scikit-learn, FastAPI, Streamlit, and local MLflow tracking. It runs 100% natively on Windows and Linux without requiring local Docker, Kubernetes, or paid cloud services.
+FraudGuard AI is designed as a modular, end-to-end MLOps portfolio platform built with Python 3.11+, scikit-learn, FastAPI, Streamlit, and local MLflow tracking. It runs 100% natively on Windows and Linux without requiring local Docker, Kubernetes, or paid cloud services.
 
 ```mermaid
 flowchart TD

@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "fraudguard-ai"
 version = "0.1.0"
-description = "Production-grade credit card fraud detection and MLOps platform"
+description = "End-to-end credit card fraud detection and MLOps portfolio platform"
 readme = "README.md"
 requires-python = ">=3.11"
 authors = [

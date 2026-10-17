@@ -1,6 +1,6 @@
 # FraudGuard AI — End-to-End Credit Card Fraud Detection & MLOps Platform
 
-[![CI Pipeline](https://github.com/conbott/Fraud-Guard-AI/actions/workflows/ci.yml/badge.svg)](https://github.com/conbott/Fraud-Guard-AI/actions/workflows/ci.yml)
+[![CI Pipeline](https://github.com/conbott/Fraud-Guard-AI/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/conbott/Fraud-Guard-AI/actions/workflows/ci.yml)
 [![Live Demo](https://img.shields.io/badge/Live%20Demo-Streamlit%20Cloud-FF4B4B?logo=streamlit&logoColor=white)](https://conbott-fraudguard.streamlit.app)
 [![Python 3.11+](https://img.shields.io/badge/python-3.11%20%7C%203.12%20%7C%203.13-blue.svg)](https://www.python.org/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
@@ -8,7 +8,7 @@
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.110+-009688.svg?logo=fastapi)](https://fastapi.tiangolo.com)
 [![Streamlit](https://img.shields.io/badge/Streamlit-1.32+-FF4B4B.svg?logo=streamlit)](https://streamlit.io)
 
-FraudGuard AI is a production-grade, zero-cost MLOps platform engineered for credit card fraud detection on extreme class imbalances (~0.17% fraud prevalence). Built natively for Windows and Linux without requiring Docker, WSL2, or paid cloud APIs, it demonstrates the full lifecycle: schema validation, leakage-safe feature engineering, baseline comparisons, imbalanced metrics (PR-AUC, Recall), decision threshold tuning, local MLflow experiment tracking, candidate quality gates, champion promotion, automated rollback, FastAPI serving, Streamlit operations dashboard, drift monitoring (PSI & KS-tests), and GitHub Actions CI/CD.
+FraudGuard AI is an end-to-end credit card fraud detection and MLOps portfolio platform demonstrating data validation, model training and evaluation, experiment tracking, API-based inference, monitoring, and automated testing. Built natively for Windows and Linux without requiring Docker, WSL2, or paid cloud APIs, it demonstrates the full lifecycle: schema validation, leakage-safe feature engineering, baseline comparisons, imbalanced metrics (PR-AUC, Recall), decision threshold tuning, local MLflow experiment tracking, candidate quality gates, champion promotion, automated rollback, FastAPI serving, Streamlit operations dashboard, drift monitoring (PSI & KS-tests), and GitHub Actions CI/CD.
 
 ---
 
@@ -59,17 +59,44 @@ flowchart TD
 
 ---
 
-## Benchmark Evaluation Results (Champion vs Baselines)
+## Benchmark Evaluation Results (Real MLG-ULB Dataset, 284,807 Transactions)
 
-Evaluated on held-out test data with decision threshold tuned strictly on the validation set:
+The MLG-ULB Credit Card Fraud Detection dataset contains 284,807 transactions with 492 fraud cases (0.1727% prevalence). All models are evaluated with decision thresholds tuned strictly on the validation partition to optimize F1-score without evaluation leakage.
 
-| Classifier Model | Val PR-AUC | Test PR-AUC | Test ROC-AUC | Test Recall | Test Precision | Test F1-Score | False Positive Rate |
-|---|---|---|---|---|---|---|---|
-| **Dummy Baseline (Stratified)** | 0.0200 | 0.0195 | 0.5000 | 0.0000 | 0.0000 | 0.0000 | 0.0100 |
-| **Logistic Regression (Balanced)** | **1.0000** | **1.0000** | **1.0000** | **1.0000** | **1.0000** | **1.0000** | **0.0000** |
-| **Random Forest (Balanced)** | **1.0000** | **1.0000** | **1.0000** | **1.0000** | **1.0000** | **1.0000** | **0.0000** |
+### 1. Stratified Partitioning (60% Train: 170,883 | 20% Val: 56,962 | 20% Held-Out Test: 56,962)
+| Classifier Model | Tuned Threshold | Val PR-AUC | Val F1 | Test PR-AUC | Test ROC-AUC | Test Precision | Test Recall | Test F1-Score | False Positive Rate | Test TP / FP / TN / FN |
+|---|---|---|---|---|---|---|---|---|---|---|
+| **Dummy Baseline (Stratified)** | 0.05 | 0.0017 | 0.0000 | 0.0017 | 0.4992 | 0.0000 | 0.0000 | 0.0000 | 0.001635 | 0 / 93 / 56,771 / 98 |
+| **Logistic Regression (`balanced`)** | 0.95 | 0.6761 | 0.4233 | 0.7168 | 0.9724 | 0.3000 | 0.8878 | 0.4485 | 0.003570 | 87 / 203 / 56,661 / 11 |
+| **Random Forest (Active Champion)** | 0.43 | **0.7693** | **0.8280** | **0.8140** | **0.9717** | **0.8081** | **0.8163** | **0.8122** | **0.000334** | **80 / 19 / 56,845 / 18** |
 
-*Note: All results are generated from verified runs of `scripts/train.py`. On real-world raw Kaggle data with noisy labels, expected production PR-AUC ranges between 0.83 and 0.88 with recall of 0.78–0.84.*
+### 2. Chronological Partitioning (Ordered by `Time`: First 60% Train | Middle 20% Val | Final 20% Test)
+| Classifier Model | Tuned Threshold | Val PR-AUC | Val F1 | Test PR-AUC | Test ROC-AUC | Test Precision | Test Recall | Test F1-Score | False Positive Rate | Test TP / FP / TN / FN |
+|---|---|---|---|---|---|---|---|---|---|---|
+| **Dummy Baseline (Stratified)** | 0.05 | 0.0010 | 0.0000 | 0.0013 | 0.4990 | 0.0000 | 0.0000 | 0.0000 | 0.002039 | 0 / 116 / 56,770 / 75 |
+| **Logistic Regression (`balanced`)** | 0.95 | 0.7511 | 0.3498 | 0.7442 | 0.9817 | 0.3520 | 0.8400 | 0.4961 | 0.002039 | 63 / 116 / 56,770 / 12 |
+| **Random Forest** | 0.34 | **0.7508** | **0.8350** | **0.8151** | **0.9547** | **0.8906** | **0.7600** | **0.8201** | **0.000123** | **57 / 7 / 56,879 / 18** |
+
+### Split Trade-offs & Empirical Analysis:
+- **Stratified Split:** Preserves exact positive class prevalence (0.1727%) uniformly across all three partitions. Random Forest achieves balanced test precision (80.81%) and recall (81.63%), producing only 19 false alarms across 56,864 transactions (FPR = 0.033%).
+- **Chronological Split:** Reflects realistic deployment where models are trained on past data and evaluated on future transactions. In the chronological split, fraud prevalence shifts from 0.2107% in training to 0.1001% in validation and 0.1317% in the test window. Random Forest achieves 89.06% precision with 76.00% recall and only 7 false alarms across 56,886 test transactions (FPR = 0.012%), confirming resilience to temporal distribution shifts.
+
+---
+
+## Advanced Offline Experiment: IEEE-CIS Fraud Detection
+In addition to the MLG-ULB baseline, FraudGuard AI includes a standalone experimentation pipeline for the complex [IEEE-CIS Fraud Detection dataset](https://www.kaggle.com/competitions/ieee-fraud-detection).
+- **Scale & Feature Schema:** 590,540 transactions across 434 columns (card identifiers, transaction amounts, device types, identity metadata, and interaction tallies).
+- **Architecture Separation:** Kept strictly offline in `scripts/run_ieee_cis_experiment.py` to prevent memory exhaustion (OOM) and preserve the lightweight, responsive Streamlit cloud application.
+- **Memory Safeguards:** Implements explicit float32/int32 downcasting and categorical frequency encoding, reducing RAM consumption from ~8-12 GB to under 2.5 GB.
+- **Temporal Evaluation:** Official competition test set is unlabeled. Internal evaluation is performed via chronological hold-out splitting on `TransactionDT`.
+- **Run Pipeline:**
+  ```powershell
+  # Specifications & verification (synthetic IEEE-CIS schema):
+  python scripts/run_ieee_cis_experiment.py --mock
+
+  # Full run on raw Kaggle files (placed in data/raw/ieee_cis/):
+  python scripts/run_ieee_cis_experiment.py --max-rows 100000
+  ```
 
 ---
 
@@ -256,21 +283,22 @@ FraudGuard-AI/
 │   └── interview_guide.md           # Portfolio technical Q&A for MLOps interviews
 ├── models/
 │   ├── README.md                    # Model artifact and registry documentation
-│   ├── champion/                    # Active production model.joblib & metadata.json
+│   ├── champion/                    # Active champion model.joblib & metadata.json
 │   ├── candidates/                  # Versioned candidate models
 │   └── reports/                     # Quality gate and drift JSON audits
 ├── scripts/
 │   ├── generate_synthetic_data.py   # Test fixture generation CLI
 │   ├── validate_data.py             # Schema & data quality validation CLI
 │   ├── train.py                     # Model comparison & training CLI
-│   ├── evaluate.py                  # Standalone model evaluation CLI
+│   ├── evaluate_experiments.py      # Multi-split benchmark evaluation CLI
+│   ├── run_ieee_cis_experiment.py   # Standalone IEEE-CIS experiment CLI
 │   ├── run_monitoring.py            # Drift detection & PSI calculation CLI
 │   └── retrain.py                   # Automated retraining, promotion, and rollback CLI
 ├── src/
 │   ├── __init__.py
 │   ├── config.py                    # YAML configuration loader with dataclasses
 │   ├── data/
-│   │   ├── loader.py                # Leakage-safe stratified dataset splitting
+│   │   ├── loader.py                # Leakage-safe stratified & chronological dataset splitting
 │   │   ├── validator.py             # Schema, type, null, inf, and duplicate validator
 │   │   └── synthetic.py             # Synthetic transaction mathematical generator
 │   ├── features/
@@ -282,7 +310,7 @@ FraudGuard-AI/
 │   │   └── registry.py              # Model registry, quality gates, and rollback
 │   ├── inference/
 │   │   ├── loader.py                # Safe Joblib artifact loader & schema checker
-│   │   └── predictor.py             # Production calibrated risk prediction engine
+│   │   └── predictor.py             # Calibrated risk prediction engine
 │   ├── monitoring/
 │   │   ├── drift.py                 # Population Stability Index & KS-test monitor
 │   │   └── metrics.py               # SQLite inference telemetry audit store

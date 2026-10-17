@@ -11,7 +11,7 @@ def create_app() -> FastAPI:
     app = FastAPI(
         title="FraudGuard AI API",
         description=(
-            "Production-grade credit card fraud detection and risk estimation service. "
+            "End-to-end credit card fraud detection and risk estimation service. "
             "Exposes calibrated prediction probabilities, threshold decisions, and audit telemetry."
         ),
         version="0.1.0",

@@ -18,6 +18,7 @@ class PreprocessingConfig:
 
 @dataclass
 class SplitConfig:
+    strategy: str = "stratified"  # "stratified" or "chronological"
     test_size: float = 0.20
     val_size: float = 0.20
     stratify: bool = True
@@ -108,6 +109,7 @@ def load_model_config(config_path: Optional[Path] = None) -> ModelConfig:
         candidates_dir=PROJECT_ROOT / art_cfg.get("candidates_dir", "models/candidates"),
         reports_dir=PROJECT_ROOT / art_cfg.get("reports_dir", "models/reports"),
         split=SplitConfig(
+            strategy=split_cfg.get("strategy", "stratified"),
             test_size=split_cfg.get("test_size", 0.20),
             val_size=split_cfg.get("val_size", 0.20),
             stratify=split_cfg.get("stratify", True),

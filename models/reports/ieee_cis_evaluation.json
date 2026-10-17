@@ -1,0 +1,30 @@
+{
+  "dataset": "IEEE-CIS Fraud Detection",
+  "sample_size": 5000,
+  "feature_count": 32,
+  "split_method": "Chronological (TransactionDT)",
+  "models": {
+    "dummy_baseline": {
+      "pr_auc": 0.02306343713956171,
+      "roc_auc": 0.5069015327822807,
+      "f1": 0.0392156862745098,
+      "recall": 0.058823529411764705,
+      "precision": 0.029411764705882353
+    },
+    "hist_gradient_boosting": {
+      "optimal_threshold": 0.8178337545379587,
+      "pr_auc": 0.39225819349414054,
+      "roc_auc": 0.9800979054650509,
+      "f1": 0.4117647058823529,
+      "recall": 0.4117647058823529,
+      "precision": 0.4117647058823529,
+      "false_positive_rate": 0.013642564802182811,
+      "confusion_matrix": {
+        "tn": 723,
+        "fp": 10,
+        "fn": 10,
+        "tp": 7
+      }
+    }
+  }
+}

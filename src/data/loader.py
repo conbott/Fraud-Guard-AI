@@ -35,13 +35,16 @@ class DataLoader:
     def split_data(
         self,
         df: pd.DataFrame,
+        strategy: Optional[str] = None,
     ) -> Tuple[pd.DataFrame, pd.Series, pd.DataFrame, pd.Series, pd.DataFrame, pd.Series]:
-        """Perform leakage-safe stratified splitting into Train, Validation, and Test sets.
+        """Perform leakage-safe splitting into Train, Validation, and Test sets.
 
         CRITICAL LEAKAGE SAFEGUARD:
         Splitting is performed strictly before any preprocessing, fitting, or scaling.
-        Stratification ensures the extreme fraud imbalance (~0.17%) is maintained
-        identically across Train, Validation, and Test partitions.
+
+        Supports:
+          - "stratified" (default): Stratifies across minority class labels.
+          - "chronological": Sorts strictly by Time to simulate real-world production deployment.
 
         Returns:
             (X_train, y_train, X_val, y_val, X_test, y_test)
@@ -50,11 +53,36 @@ class DataLoader:
         if target_col not in df.columns:
             raise KeyError(f"Target column '{target_col}' not present in dataframe.")
 
+        split_strat = strategy or self.config.split.strategy
+        test_size = self.config.split.test_size
+        val_size = self.config.split.val_size
+
+        if split_strat == "chronological":
+            time_col = self.config.time_column
+            if time_col not in df.columns:
+                raise KeyError(f"Time column '{time_col}' required for chronological splitting.")
+            df_sorted = df.sort_values(time_col).reset_index(drop=True)
+            n_total = len(df_sorted)
+            n_test = int(round(n_total * test_size))
+            n_val = int(round(n_total * val_size))
+            n_train = n_total - n_test - n_val
+
+            train_df = df_sorted.iloc[:n_train]
+            val_df = df_sorted.iloc[n_train:n_train + n_val]
+            test_df = df_sorted.iloc[n_train + n_val:]
+
+            X_train = train_df.drop(columns=[target_col])
+            y_train = train_df[target_col]
+            X_val = val_df.drop(columns=[target_col])
+            y_val = val_df[target_col]
+            X_test = test_df.drop(columns=[target_col])
+            y_test = test_df[target_col]
+            return X_train, y_train, X_val, y_val, X_test, y_test
+
+        # Default: Stratified Split
         X = df.drop(columns=[target_col])
         y = df[target_col]
 
-        # Step 1: Hold out Test set
-        test_size = self.config.split.test_size
         random_seed = self.config.random_seed
         stratify_test = y if self.config.split.stratify else None
 
@@ -67,9 +95,7 @@ class DataLoader:
             shuffle=self.config.split.shuffle,
         )
 
-        # Step 2: Split remaining data into Train and Validation
-        # val_size relative to original: adjust for the reduced temporary pool
-        val_size_adjusted = self.config.split.val_size / (1.0 - test_size)
+        val_size_adjusted = val_size / (1.0 - test_size)
         stratify_val = y_temp if self.config.split.stratify else None
 
         X_train, X_val, y_train, y_val = train_test_split(

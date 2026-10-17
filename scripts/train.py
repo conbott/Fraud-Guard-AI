@@ -24,6 +24,13 @@ def main():
         action="store_true",
         help="Directly export and promote this trained model as the active Champion.",
     )
+    parser.add_argument(
+        "--split-strategy",
+        type=str,
+        choices=["stratified", "chronological"],
+        default="stratified",
+        help="Data partitioning strategy: stratified (default) or chronological (ordered by Time).",
+    )
     args = parser.parse_args()
 
     trainer = ModelTrainer()
@@ -34,6 +41,7 @@ def main():
         data_path=data_path,
         save_candidate=not args.champion,
         is_champion=args.champion,
+        split_strategy=args.split_strategy,
     )
 
     print("\n" + "=" * 60)

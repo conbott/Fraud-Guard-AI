@@ -38,6 +38,8 @@ models/history/*
 !models/history/.gitkeep
 models/reports/*
 !models/reports/.gitkeep
+!models/reports/ulb_benchmark_comparison.csv
+!models/reports/ieee_cis_evaluation.json
 # Champion metadata and test champion can be tracked or reproduced via scripts
 
 # SQLite databases & telemetry

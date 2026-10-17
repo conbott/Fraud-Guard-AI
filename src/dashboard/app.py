@@ -107,7 +107,7 @@ def get_model_bundle():
 
 @st.cache_resource
 def get_predictor():
-    """Instantiate production predictor."""
+    """Instantiate fraud risk predictor."""
     bundle = get_model_bundle()
     if bundle:
         return FraudPredictor(loaded_model=bundle)
@@ -157,10 +157,16 @@ def main():
         ],
     )
 
+    meta = bundle.metadata if bundle else {}
+    prov = meta.get("provenance", {})
+    is_synth = prov.get("is_synthetic", True)
+    prov_label = "Kaggle MLG-ULB (Real Data)" if not is_synth else "Synthetic Benchmark"
+
     st.sidebar.divider()
     if bundle:
         st.sidebar.markdown(f"**Model Chosen:**\n\n`{algo_display}`")
         st.sidebar.markdown(f"**Version:**\n\n`{bundle.version}`")
+        st.sidebar.markdown(f"**Dataset Provenance:**\n\n`{prov_label}`")
         st.sidebar.markdown(f"**Decision Threshold:**\n\n`{bundle.optimal_threshold:.2f}`")
     else:
         st.sidebar.warning("No Champion Model Found")
@@ -171,8 +177,8 @@ def main():
     if nav_option == "Overview":
         st.title("FraudGuard AI — MLOps Overview")
         st.markdown(
-            "> **Notice:** FraudGuard AI is an end-to-end, zero-spending MLOps portfolio platform "
-            "designed for credit card fraud detection on extreme class imbalances (~0.17% fraud prevalence). "
+            "> **Notice:** FraudGuard AI is an end-to-end credit card fraud detection and MLOps portfolio platform "
+            "designed for risk scoring on extreme class imbalances (~0.17% fraud prevalence). "
             "Features `V1` through `V28` are anonymized PCA components. No personal financial data is stored."
         )
 
@@ -182,6 +188,18 @@ def main():
 
         meta = bundle.metadata
         test_m = meta.get("test_metrics", {})
+        prov = meta.get("provenance", {})
+        is_synth = prov.get("is_synthetic", True)
+
+        if not is_synth:
+            st.success(
+                f"**Dataset Provenance Verified:** {prov.get('dataset_name', 'MLG-ULB Credit Card Fraud Detection')} "
+                f"(Real Kaggle Dataset, {prov.get('total_samples', 284807):,} transactions, "
+                f"{prov.get('fraud_samples', 492):,} fraud events, {prov.get('prevalence', 0.001727)*100:.3f}% prevalence, "
+                f"Stratified Split: 60% Train / 20% Val / 20% Held-Out Test)."
+            )
+        else:
+            st.info("**Dataset Provenance:** Synthetic benchmark demonstration fixture.")
 
         col1, col2, col3, col4, col5 = st.columns([1.6, 1, 1, 1, 1])
         with col1:
@@ -224,13 +242,14 @@ def main():
             )
 
         st.divider()
-        st.subheader("Model Artifact Metadata")
+        st.subheader("Model Artifact Metadata & Provenance")
         st.json(
             {
                 "version": bundle.version,
                 "algorithm": bundle.algorithm,
                 "timestamp": meta.get("timestamp"),
                 "dataset_fingerprint": meta.get("dataset_fingerprint"),
+                "provenance": prov,
                 "random_seed": meta.get("random_seed"),
                 "feature_count": len(bundle.feature_names),
                 "environment": meta.get("environment"),
@@ -259,23 +278,28 @@ def main():
                     st.session_state[f"input_V{i}"] = float(NORMAL_SAMPLE[f"V{i}"])
 
             # Presets with clean professional button styling
+            st.caption(
+                "Benchmark presets: Note that these sample profiles are synthetic demonstration fixtures "
+                "modeled on MLG-ULB PCA feature distributions. They allow testing the risk scoring engine "
+                "without exposing confidential banking records."
+            )
             preset_col1, preset_col2, preset_col3 = st.columns(3)
 
-            if preset_col1.button("Load Normal Sample", use_container_width=True):
+            if preset_col1.button("Load Normal Sample (Synthetic Demo)", use_container_width=True):
                 st.session_state["input_time"] = float(NORMAL_SAMPLE["Time"])
                 st.session_state["input_amount"] = float(NORMAL_SAMPLE["Amount"])
                 for i in range(1, 29):
                     st.session_state[f"input_V{i}"] = float(NORMAL_SAMPLE[f"V{i}"])
                 st.rerun()
 
-            if preset_col2.button("Load Fraud-like Sample", use_container_width=True):
+            if preset_col2.button("Load Fraud-like Sample (Synthetic Demo)", use_container_width=True):
                 st.session_state["input_time"] = float(FRAUD_SAMPLE["Time"])
                 st.session_state["input_amount"] = float(FRAUD_SAMPLE["Amount"])
                 for i in range(1, 29):
                     st.session_state[f"input_V{i}"] = float(FRAUD_SAMPLE[f"V{i}"])
                 st.rerun()
 
-            if preset_col3.button("Random Sample", use_container_width=True):
+            if preset_col3.button("Generate Random Synthetic Sample", use_container_width=True):
                 rng = np.random.default_rng()
                 st.session_state["input_time"] = float(np.round(rng.uniform(100.0, 150000.0), 2))
                 st.session_state["input_amount"] = float(np.round(rng.exponential(50.0), 2))
@@ -398,25 +422,78 @@ def main():
         comparison = meta.get("model_comparison", {})
         test_m = meta.get("test_metrics", {})
 
-        st.subheader("Model Benchmark Comparison (Validation Partition)")
+        st.subheader("Model Benchmark Comparison")
         st.markdown(
-            "Comparing baseline vs machine learning algorithms on identical stratified splits. "
-            "**PR-AUC** is the primary criterion for imbalanced ranking."
+            "Comparing baseline vs machine learning algorithms on identical partitions. "
+            "**PR-AUC** is the primary criterion for imbalanced ranking, and decision thresholds are tuned strictly on validation data."
         )
 
-        comp_data = []
-        for name, metrics in comparison.items():
-            comp_data.append({
-                "Algorithm": name.replace("_", " ").title(),
-                "Val PR-AUC": metrics.get("val_pr_auc"),
-                "Val ROC-AUC": metrics.get("val_roc_auc"),
-                "Val F1 (Tuned)": metrics.get("val_f1_tuned"),
-                "Val Recall": metrics.get("val_recall_tuned"),
-                "Val Precision": metrics.get("val_precision_tuned"),
-                "Optimal Threshold": metrics.get("optimal_threshold"),
-            })
-        if comp_data:
-            st.dataframe(pd.DataFrame(comp_data), use_container_width=True)
+        eval_view = st.radio(
+            "Select Benchmark View:",
+            [
+                "MLG-ULB Stratified Split (60% Train / 20% Val / 20% Test)",
+                "MLG-ULB Chronological Split (Ordered by Time)",
+                "IEEE-CIS Fraud Detection (Advanced Offline Experiment)",
+            ],
+            horizontal=True,
+        )
+
+        csv_comp_path = PROJECT_ROOT / "models" / "reports" / "ulb_benchmark_comparison.csv"
+        if eval_view == "MLG-ULB Stratified Split (60% Train / 20% Val / 20% Test)":
+            if csv_comp_path.exists():
+                df_bench = pd.read_csv(csv_comp_path)
+                df_strat = df_bench[df_bench["split_strategy"] == "stratified"].copy()
+                st.dataframe(df_strat, use_container_width=True)
+            else:
+                comp_data = []
+                for name, metrics in comparison.items():
+                    comp_data.append({
+                        "Algorithm": name.replace("_", " ").title(),
+                        "Val PR-AUC": metrics.get("val_pr_auc"),
+                        "Val ROC-AUC": metrics.get("val_roc_auc"),
+                        "Val F1 (Tuned)": metrics.get("val_f1_tuned"),
+                        "Val Recall": metrics.get("val_recall_tuned"),
+                        "Val Precision": metrics.get("val_precision_tuned"),
+                        "Optimal Threshold": metrics.get("optimal_threshold"),
+                    })
+                if comp_data:
+                    st.dataframe(pd.DataFrame(comp_data), use_container_width=True)
+
+        elif eval_view == "MLG-ULB Chronological Split (Ordered by Time)":
+            if csv_comp_path.exists():
+                df_bench = pd.read_csv(csv_comp_path)
+                df_chrono = df_bench[df_bench["split_strategy"] == "chronological"].copy()
+                st.dataframe(df_chrono, use_container_width=True)
+                st.caption(
+                    "Chronological Split Analysis: Models are trained on the first 60% of timeline, "
+                    "threshold-tuned on the middle 20%, and evaluated on the final 20%. "
+                    "This evaluates robustness against non-stationary temporal shifts in transaction patterns."
+                )
+            else:
+                st.info("Chronological benchmark report not found at models/reports/ulb_benchmark_comparison.csv.")
+
+        elif eval_view == "IEEE-CIS Fraud Detection (Advanced Offline Experiment)":
+            ieee_report_path = PROJECT_ROOT / "models" / "reports" / "ieee_cis_evaluation.json"
+            if ieee_report_path.exists():
+                import json
+                with open(ieee_report_path, "r", encoding="utf-8") as f:
+                    ieee_data = json.load(f)
+                st.markdown(f"**Dataset:** `{ieee_data.get('dataset')}` | **Split Method:** `{ieee_data.get('split_method')}`")
+                ieee_rows = []
+                for m_name, m_vals in ieee_data.get("models", {}).items():
+                    ieee_rows.append({
+                        "Model": m_name.replace("_", " ").title(),
+                        "PR-AUC": m_vals.get("pr_auc"),
+                        "ROC-AUC": m_vals.get("roc_auc"),
+                        "F1-Score": m_vals.get("f1"),
+                        "Recall": m_vals.get("recall"),
+                        "Precision": m_vals.get("precision"),
+                        "Optimal Threshold": m_vals.get("optimal_threshold", 0.5),
+                    })
+                st.dataframe(pd.DataFrame(ieee_rows), use_container_width=True)
+                st.caption("Note: IEEE-CIS is evaluated as a separate offline experiment with memory safeguards and chronological splitting on TransactionDT.")
+            else:
+                st.info("IEEE-CIS experiment report not yet generated. Run: python scripts/run_ieee_cis_experiment.py --mock")
 
         st.divider()
         st.subheader("Held-Out Test Set Evaluation (Champion)")
@@ -729,7 +806,7 @@ def main():
 
         st.divider()
         st.subheader("Disaster Recovery: Champion Rollback")
-        st.write("Restore the immediately preceding champion model from backup if production anomalies arise.")
+        st.write("Restore the immediately preceding champion model from backup if deployment anomalies arise.")
         if st.button("Rollback to Previous Champion"):
             try:
                 registry.rollback_to_previous_champion()
