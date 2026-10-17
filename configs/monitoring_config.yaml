@@ -1,0 +1,32 @@
+monitoring:
+  reference_data_path: "data/processed/reference_features.parquet"
+  batch_window_size: 100
+  sample_min_records: 30
+
+drift_thresholds:
+  psi:
+    no_drift: 0.10
+    moderate_drift: 0.25
+  ks_test:
+    p_value_threshold: 0.05
+  missing_value_rate_threshold: 0.01
+
+features_to_monitor:
+  - "Amount"
+  - "V1"
+  - "V2"
+  - "V3"
+  - "V4"
+  - "V10"
+  - "V12"
+  - "V14"
+  - "V17"
+
+prediction_monitoring:
+  score_column: "risk_score"
+  prediction_column: "is_fraud"
+  alert_high_fraud_rate_threshold: 0.05
+
+storage:
+  predictions_log_db: "data/processed/predictions_audit.db"
+  drift_reports_dir: "models/reports/drift"

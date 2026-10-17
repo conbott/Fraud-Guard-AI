@@ -1,0 +1,323 @@
+FRAUDGUARD AI — MASTER BUILD SPECIFICATION FOR ANTIGRAVITY Target agent:
+Gemini 3.8 Flash High Project goal: Build a complete, portfolio-quality,
+end-to-end MLOps project for credit-card fraud detection. Primary
+constraints: zero spending, no payment verification, no Docker, no local
+virtualization, Windows-native development.
+
+HOW TO USE THIS FILE 1. Open a new, dedicated Antigravity workspace
+folder for this project. 2. Add this file to the workspace as
+PROJECT_SPEC.txt (or paste its contents into the agent). 3. Paste the
+short kickoff prompt provided separately in the chat. 4. Have the agent
+implement and test the project in stages. Do not ask it to generate
+everything blindly in one response.
+
+ROLE Act as a senior ML engineer, MLOps engineer, Python backend
+developer, QA engineer, and cloud deployment engineer. Build actual
+files in the workspace, run commands where possible, fix errors, and
+report honestly what was and was not verified. Do not merely provide a
+plan or isolated snippets.
+
+NON-NEGOTIABLE CONSTRAINTS A. ZERO SPENDING - No paid APIs,
+subscriptions, trials that require payment details, paid databases, paid
+domains, cloud credits requiring a payment method, or services that
+require a billing account. - Do not activate billing or create cloud
+resources that might incur charges. - Do not require AWS or Azure for
+the first deployment. - Verify current free-tier terms before
+recommending a hosting service. Free availability, eligibility, limits,
+and payment-verification requirements can change. - If a service
+requires payment verification, an unavailable account entitlement, or a
+paid feature, do not make it mandatory. Provide a local-only fallback
+and explain the limitation. - Use open-source packages and public data
+with appropriate licensing. No paid model APIs.
+
+B. NO DOCKER OR VIRTUALIZATION ON MY COMPUTER - I use Windows and
+ThrottleStop undervolting. Hardware virtualization is disabled and must
+stay disabled. - Do not install or require Docker Desktop, Docker
+Engine, Docker Compose, WSL2, Hyper-V, VirtualBox, VMware, Minikube,
+Kind, Kubernetes, or any VM/container runtime locally. - Do not ask me
+to change BIOS, virtualization settings, power settings, or ThrottleStop
+configuration. - Use a normal Python venv on Windows; this does not
+require hardware virtualization. - Do not include Dockerfiles or
+Kubernetes as required components. - Cloud hosting may manage its own
+infrastructure internally; I must not need a container runtime on my PC.
+
+C. SAFETY AND WORKSPACE - Inspect the workspace before making changes.
+Work in a dedicated project folder and do not overwrite unrelated
+files. - Do not delete user files, change system settings, upload
+secrets, or publish code without my explicit action. - Never claim a
+command, test, deployment, or metric succeeded unless it was actually
+verified. - Do not commit datasets, secrets, personal financial data,
+logs containing sensitive values, or large generated artifacts.
+
+PROJECT Name: FraudGuard AI — End-to-End Credit Card Fraud Detection and
+MLOps Platform.
+
+Build a practical, realistic portfolio project demonstrating: 1. Data
+ingestion and schema validation. 2. Leakage-safe preprocessing and
+training. 3. Imbalanced classification evaluation. 4. Experiment
+tracking and artifact/model versioning. 5. Prediction API and
+interactive dashboard. 6. Automated tests and CI. 7. Prediction logging
+and drift monitoring. 8. Candidate evaluation, model promotion, and
+rollback. 9. Reproducible retraining. 10. A public cloud demo if a
+genuinely free, eligible route is available without payment
+verification. 11. Professional documentation and interview preparation.
+
+STACK - Python 3.11 or another version verified compatible with
+dependencies and hosting. - pandas, NumPy, scikit-learn, joblib,
+matplotlib, seaborn. - FastAPI, Uvicorn, Pydantic, HTTPX. - Streamlit. -
+MLflow for local experiment tracking. - Git and optionally DVC for
+local-first data versioning. - SQLite for local metadata/prediction
+records where useful. - pytest, Ruff, GitHub Actions. - Pandera or a
+small custom validation layer. - Evidently AI only if its current APIs
+and dependencies are compatible; otherwise implement transparent, tested
+drift metrics using standard scientific Python libraries. - Avoid
+unnecessary packages and dependency conflicts. - No Docker, Kubernetes,
+paid API, paid database, or paid hosted MLflow dependency.
+
+DATASET Primary option: Kaggle Credit Card Fraud Detection dataset:
+https://www.kaggle.com/datasets/mlg-ulb/creditcardfraud
+
+Common schema includes Time, Amount, V1–V28, and binary Class, where
+Class=1 means fraud. Validate the actual file rather than assuming it
+matches exactly. - Do not require Kaggle API credentials. - Explain how
+I can manually download and extract the CSV. - Never scrape or bypass
+access controls. - Never commit the full dataset. - Include a small
+synthetic fixture for automated tests and a script to generate clearly
+labelled synthetic data. - Synthetic data must never be presented as
+genuine financial transactions or as evidence of real model
+performance. - The project should still pass tests without the Kaggle
+dataset. - The public cloud app must not require the full dataset at
+runtime. - Do not store card numbers, CVVs, expiry dates, credentials,
+or personal financial records.
+
+ML PIPELINE Create separate, maintainable modules for loading,
+validation, preprocessing, training, evaluation, artifact creation,
+inference, and monitoring. Train and compare: 1. DummyClassifier
+baseline. 2. Logistic Regression. 3. Random Forest. Optionally use
+XGBoost only if installation, resource use, and deployment compatibility
+are sound. Requirements: - Fixed random seeds and stratified splits. -
+Prevent target leakage and train/test leakage. - Fit preprocessing only
+on training data. - Tune thresholds on validation data, not the held-out
+test set. - Use class weighting or resampling only within the training
+process and document it. - Accuracy must not be the primary metric for
+the imbalanced dataset. - Report precision, recall, F1, average
+precision/PR-AUC, ROC-AUC, confusion matrix, false-positive rate,
+false-negative rate, prevalence, and inference latency where
+appropriate. - Clearly identify validation versus test metrics. -
+Explain why precision-recall metrics matter. - Do not invent metrics or
+claim banking-grade performance.
+
+MODEL ARTIFACTS AND VERSIONING Save a versioned model artifact and
+metadata including: - model algorithm and version - training timestamp -
+dataset fingerprint - random seed - feature schema and order -
+preprocessing information - decision threshold - training
+configuration - evaluation metrics - library versions Use Joblib only
+for artifacts generated and controlled by this project. Never load
+arbitrary user-uploaded pickle/Joblib files. Implement a reliable model
+loader that validates schema and gives actionable errors if an artifact
+is missing or incompatible. Use MLflow locally for experiment tracking:
+parameters, metrics, dataset fingerprint, duration, artifact location,
+commit hash when available, feature schema version, and selected
+threshold. Do not require a hosted MLflow server. Cloud dashboard must
+not depend on local MLflow being available. Implement a simple, tested
+model metadata/registry and promotion flow in repository files. Document
+its limitations; do not falsely claim it is a managed enterprise
+registry. DVC is optional and local-first. Do not require paid remote
+storage.
+
+DATA VALIDATION Validate: - required and unexpected columns - data
+types - missing and infinite values - target labels - invalid numerical
+values - duplicate records - minimum row count - feature order and
+schema compatibility Produce a machine-readable report and actionable
+errors. Do not silently discard large amounts of data. Explain that
+duplicate removal must be decided carefully for transaction data.
+
+FASTAPI Create a local API with: - GET /health - GET /model-info - POST
+/predict - POST /predict/batch - GET /metrics, if implemented in a
+meaningful and tested way Requirements: - Pydantic validation,
+structured JSON, request IDs, clear HTTP errors, batch-size limits, safe
+logging, no secrets or stack traces exposed. - Return predicted class,
+risk score, threshold, and model version. - Explain predictions are
+estimates, not verified fraud determinations. - Include OpenAPI docs. -
+Must run natively on Windows without Docker. - Document the exact
+working PowerShell command and correct import paths.
+
+STREAMLIT DASHBOARD Build a polished, responsive, professional dashboard
+with sidebar navigation: 1. Overview: current demo activity, model
+version, evaluation metrics, training timestamp, model/data health.
+Label synthetic/demo data clearly; do not invent live bank activity. 2.
+Transaction Prediction: single prediction form, validated CSV batch
+predictions, row limit, result, risk score, threshold, version,
+cautionary explanation. Use the exact feature schema. Since V1–V28 are
+PCA-transformed, do not invent human-readable meanings for them. 3.
+Model Evaluation: metrics, confusion matrix, PR curve, ROC curve, model
+comparison; use actual generated results and distinguish
+validation/test. 4. Data Quality: schema status, missing/invalid values,
+duplicates, feature summaries, validation failures. 5. Drift Monitoring:
+reference and current data stats, drift metrics, prediction
+distribution, timestamp, severity, and method. Allow controlled
+synthetic drift simulation and label it as simulated. 6. Model Registry:
+versions, metrics, current champion, candidate promotion status, prior
+version, rollback. Promotion must require quality gates. 7. System
+Information: app/model version, Python version, monitoring status, and
+architecture diagram. The deployed Streamlit app must use shared Python
+modules directly. It must not require a separately running local FastAPI
+service, local MLflow server, or persistent local SQLite database to
+start. Gracefully handle missing optional local-only services.
+
+MONITORING Track where practical: - prediction count - latency -
+prediction errors - schema violations - missing-value rate - feature
+distribution shift - prediction-score distribution - performance when
+ground-truth labels become available Use a defined reference dataset and
+comparison window. Use documented PSI or another appropriate statistical
+test. Put thresholds in configuration. Explain data drift vs concept
+drift vs performance degradation. Drift does not automatically prove a
+model is inaccurate. Provide a reusable monitoring function, dashboard
+view, CLI report, reproducible synthetic drift test, and optional local
+Prometheus-compatible endpoint only if meaningful. No paid monitoring
+service or always-on external service.
+
+RETRAINING, PROMOTION, ROLLBACK Implement a local CLI workflow: 1.
+validate candidate data 2. train candidate 3. evaluate using a
+leakage-safe split 4. compare against champion using configurable
+quality gates 5. reject failed candidates 6. save candidate
+artifact/report 7. promote only if all gates pass 8. preserve prior
+champion and rollback capability 9. record promotion/rejection reason Do
+not trigger promotion from drift alone. Require suitable labels and
+evaluation. Tests must demonstrate rejection of a poor candidate and
+preservation/rollback of the champion. Provide manual retraining via
+CLI. GitHub Actions may run lightweight tests and synthetic smoke
+training. Do not download the full dataset in CI, run infinite loops, or
+schedule expensive jobs.
+
+CI/CD Create .github/workflows/ci.yml: - checkout - setup compatible
+Python - install dependencies - Ruff - unit tests - API tests -
+schema/data validation tests on synthetic fixtures - model smoke test on
+synthetic data - verify application entry point/artifact assumptions -
+coverage output if practical Use GitHub-hosted runners within current
+free quotas, minimal permissions, and pinned/stable actions. No Docker,
+container registry, cloud credentials, secrets, or paid runner. CI
+should not claim that it deploys to production unless an actual
+deployment step is configured and verified.
+
+WINDOWS DEVELOPER EXPERIENCE Provide accurate PowerShell instructions
+for: - checking Python and Git - creating/activating normal Python
+venv - installing dependencies - downloading/validating dataset - EDA -
+training - MLflow UI - FastAPI - Streamlit - tests/lint - monitoring -
+retraining - preparing a release Do not require admin rights
+unnecessarily. Include compatible requirements files, pyproject.toml,
+.gitignore, config files, PowerShell scripts if useful, and an optional
+.env.example only if actually needed. Do not rely on Unix-only commands
+without PowerShell equivalents.
+
+CLOUD DEPLOYMENT Preferred initial target: Streamlit Community Cloud,
+subject to current free-account eligibility, resource limits, and
+payment-verification rules. Official guide:
+https://docs.streamlit.io/deploy/streamlit-community-cloud/deploy-your-app
+
+Before giving final instructions, verify current requirements using
+available up-to-date documentation. Do not assume a free plan means no
+payment verification. If account eligibility is uncertain or payment
+verification is required, clearly state this and provide a genuinely
+free local demo path and, if verified, an alternative that does not
+require payment details. - No AWS/Azure resources for the initial
+release. - No billing activation or cloud resource provisioning. - No
+secrets in GitHub. - Avoid large model artifacts and full dataset in the
+deployed repo. - Use supported Python/dependency versions, caching, and
+reasonable memory. - Do not depend on ephemeral cloud filesystem
+persistence. - The app must run without local MLflow, local API, or
+local database. - Do not claim deployment is complete until I manually
+publish/deploy and the URL is verified. - Include an optional documented
+AWS/Azure migration design only; do not claim unimplemented
+infrastructure as delivered.
+
+SUGGESTED PROJECT STRUCTURE fraudguard-ai/ README.md LICENSE
+pyproject.toml requirements.txt requirements-dev.txt .gitignore configs/
+model_config.yaml monitoring_config.yaml data/ README.md raw/ processed/
+synthetic/ docs/ architecture.md data_dictionary.md model_card.md
+deployment.md troubleshooting.md security.md testing.md retraining.md
+interview_guide.md models/ README.md champion/ candidates/ reports/
+scripts/ validate_data.py train.py evaluate.py
+generate_synthetic_data.py run_monitoring.py retrain.py src/ init.py
+config.py data/ features/ training/ inference/ monitoring/ api/
+dashboard/ tests/ unit/ integration/ fixtures/ .github/ workflows/
+ci.yml Adapt the layout if there is a sound engineering reason. Do not
+create empty placeholder modules or claim unimplemented features. Do not
+include Docker/Kubernetes directories or files.
+
+TESTS Write real tests for: - schema validation, missing columns,
+feature order, invalid numbers/labels - preprocessing consistency and
+leakage safeguards - model training on synthetic data -
+serialization/loading - prediction output and threshold behavior - API
+health, prediction, invalid request, batch limits - monitoring metrics
+and controlled drift - promotion gates, poor-candidate rejection,
+rollback - dashboard import/startup - config defaults Tests must not
+require downloading the real dataset. Use temporary directories. Run
+tests and report actual results. Never claim tests passed if they were
+not run.
+
+DOCUMENTATION README must include project overview, problem, features,
+Mermaid architecture/lifecycle diagrams, stack, data source and
+limitations, Windows setup, training, MLflow, API examples, dashboard,
+monitoring, retraining, CI, cloud deployment, real screenshot
+instructions, actual evaluation reports, security, limitations, future
+work, troubleshooting, license and attribution. Also create: - model
+card (intended use, out-of-scope use, data, evaluation,
+limitations/bias) - data dictionary - architecture documentation
+matching the actual code - deployment guide - testing guide - security
+guide - retraining guide - interview guide with technical questions and
+accurate answers Explain why Docker/Kubernetes were omitted and how the
+architecture could later migrate to AWS/Azure. Do not claim enterprise
+throughput, high availability, compliance, or production banking
+readiness without implementation and measurements.
+
+ENGINEERING STANDARDS - Modular maintainable Python, type hints,
+docstrings, sensible names. - Explicit error handling, logging, no
+hard-coded secrets or absolute machine paths. - Configurable thresholds
+and deterministic seeds. - Compatible dependencies; avoid unnecessary
+complexity. - Same preprocessing at training and inference. - Real test
+and metric results only. - No fake feature claims or placeholder
+modules. - No large dataset in Git. - Review code for secrets, incorrect
+imports, feature-schema mismatch, and unsupported deployment
+assumptions.
+
+IMPLEMENTATION PLAN — WORK IN STAGES Stage 1: Inspect workspace, OS,
+Python/Git availability, and constraints. Do not modify system settings.
+Summarize risks and create a task checklist, then continue. Stage 2:
+Implement data generation for tests, data validation, preprocessing,
+model training/evaluation, artifacts, and tests. Run tests. Stage 3:
+Implement MLflow, metadata/registry, monitoring, retraining, promotion,
+rollback. Test each. Stage 4: Implement FastAPI and API tests. Stage 5:
+Implement Streamlit dashboard and test startup. Stage 6: Implement
+GitHub Actions and verify commands. Stage 7: Verify current free hosting
+requirements and prepare deployment files/docs. Stage 8: Run tests,
+lint, training smoke test, API smoke test, dashboard startup, inspect
+dependencies and repository for errors/secrets/large data. Stage 9:
+Write final handover with created files, implemented functionality,
+exact PowerShell commands, actual test results, dataset setup,
+MLflow/API/dashboard/monitoring/retraining commands, GitHub publishing
+steps, cloud deployment steps, manual actions, limitations, and next
+steps.
+
+Do not stop after planning. Implement and validate the project in
+manageable stages. If a command cannot run in the current environment,
+state why and give me the exact PowerShell command to run. Do not make
+account changes, publish code, or deploy without my explicit action.
+
+DEFINITION OF DONE - Actual, working source code and documentation. -
+Leakage-safe training and appropriate imbalanced metrics. - Local MLflow
+experiment tracking. - Versioned model metadata and safe artifact
+loading. - Working local FastAPI and Streamlit app. - Monitoring and
+drift report on test data. - Retraining, quality gates, promotion and
+rollback tested. - CI workflow configured and commands aligned. -
+Windows PowerShell setup works without Docker or virtualization. - No
+paid APIs/services required. - Cloud instructions reflect current
+free-tier eligibility and do not assume payment verification is
+unnecessary. - No claims of deployment or passing tests without
+verification.
+
+BEGIN NOW Inspect the workspace and environment first. Then implement
+Stage 2 as the first concrete coding milestone. Keep a short checklist
+of completed, in-progress, and blocked items. Do not dump the entire
+project as one huge response; create files, run tests, fix issues, and
+continue stage by stage.

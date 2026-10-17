@@ -1,0 +1,88 @@
+project:
+  name: "FraudGuard AI"
+  version: "0.1.0"
+  random_seed: 42
+
+data:
+  raw_path: "data/raw/creditcard.csv"
+  processed_dir: "data/processed"
+  synthetic_path: "data/synthetic/synthetic_transactions.csv"
+  fixture_path: "data/synthetic/test_fixture.csv"
+  target_column: "Class"
+  amount_column: "Amount"
+  time_column: "Time"
+  pca_features:
+    - "V1"
+    - "V2"
+    - "V3"
+    - "V4"
+    - "V5"
+    - "V6"
+    - "V7"
+    - "V8"
+    - "V9"
+    - "V10"
+    - "V11"
+    - "V12"
+    - "V13"
+    - "V14"
+    - "V15"
+    - "V16"
+    - "V17"
+    - "V18"
+    - "V19"
+    - "V20"
+    - "V21"
+    - "V22"
+    - "V23"
+    - "V24"
+    - "V25"
+    - "V26"
+    - "V27"
+    - "V28"
+
+split:
+  test_size: 0.20
+  val_size: 0.20
+  stratify: true
+  shuffle: true
+
+preprocessing:
+  scaler: "robust" # RobustScaler handles extreme transaction amount outliers cleanly
+  log_transform_amount: true
+  drop_time: false
+
+training:
+  models:
+    - name: "dummy"
+      strategy: "stratified"
+    - name: "logistic_regression"
+      max_iter: 1000
+      class_weight: "balanced"
+      C: 0.1
+      solver: "lbfgs"
+    - name: "random_forest"
+      n_estimators: 100
+      max_depth: 10
+      class_weight: "balanced"
+      n_jobs: -1
+      random_state: 42
+
+threshold_tuning:
+  metric: "f1"
+  search_space:
+    min: 0.05
+    max: 0.95
+    step: 0.01
+
+quality_gates:
+  min_pr_auc: 0.70
+  min_recall: 0.75
+  min_precision: 0.60
+  max_fpr: 0.02
+
+artifacts:
+  models_dir: "models"
+  champion_dir: "models/champion"
+  candidates_dir: "models/candidates"
+  reports_dir: "models/reports"

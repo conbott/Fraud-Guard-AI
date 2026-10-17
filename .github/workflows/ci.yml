@@ -1,0 +1,54 @@
+name: FraudGuard AI CI
+
+on:
+  push:
+    branches: [ "main", "master", "develop" ]
+  pull_request:
+    branches: [ "main", "master" ]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test-and-lint:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements-dev.txt
+
+      - name: Run Ruff Linting
+        run: |
+          ruff check src scripts tests
+
+      - name: Generate Synthetic Test Fixtures
+        run: |
+          python scripts/generate_synthetic_data.py --create-fixtures
+
+      - name: Run Data Validation Smoke Test
+        run: |
+          python scripts/validate_data.py --data-path data/synthetic/test_fixture.csv
+
+      - name: Run Unit and Integration Tests
+        run: |
+          pytest tests/ -v --cov=src --cov-report=term-missing
+
+      - name: Run Model Training Smoke Test
+        run: |
+          python scripts/train.py --data-path data/synthetic/test_fixture.csv --champion
+
+      - name: Run Drift Monitoring Smoke Test
+        run: |
+          python scripts/run_monitoring.py --data-path data/synthetic/test_fixture.csv

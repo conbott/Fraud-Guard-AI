@@ -1,0 +1,58 @@
+# Python environment & bytecode
+.venv/
+venv/
+ENV/
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+
+# Testing & Linting
+.pytest_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+coverage.xml
+
+# MLflow local tracking & artifacts
+mlruns/
+mlartifacts/
+
+# Local data (Do NOT commit full raw or processed datasets)
+data/raw/*
+!data/raw/.gitkeep
+!data/raw/README.md
+data/processed/*
+!data/processed/.gitkeep
+!data/processed/README.md
+# Keep synthetic fixtures for automated tests tracked
+data/synthetic/*
+!data/synthetic/.gitkeep
+!data/synthetic/test_fixture.csv
+
+# Models and Reports (Large generated artifacts)
+models/candidates/*
+!models/candidates/.gitkeep
+models/history/*
+!models/history/.gitkeep
+models/reports/*
+!models/reports/.gitkeep
+# Champion metadata and test champion can be tracked or reproduced via scripts
+
+# SQLite databases & telemetry
+*.db
+*.sqlite
+*.sqlite3
+
+# Environment variables & secrets
+.env
+.env.*
+!.env.example
+
+# IDE & OS
+.vscode/
+.idea/
+Thumbs.db
+Desktop.ini
+*.log
