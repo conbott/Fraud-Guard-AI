@@ -95,14 +95,29 @@ st.set_page_config(
 )
 
 
+def _get_champion_cache_key() -> str:
+    """Return modification timestamp of champion metadata to bust cache when model updates."""
+    meta_path = PROJECT_ROOT / "models" / "champion" / "metadata.json"
+    if meta_path.exists():
+        stat = meta_path.stat()
+        return f"{stat.st_mtime}_{stat.st_size}"
+    return "default"
+
+
 @st.cache_resource
-def get_model_bundle():
-    """Load champion model artifact with caching."""
+def _load_cached_bundle(cache_key: str):
+    """Load champion model artifact with caching keyed on file state."""
     try:
         return ModelLoader.load_champion()
     except Exception as e:
         st.error(f"Failed to load champion model: {e}")
         return None
+
+
+def get_model_bundle():
+    """Load champion model artifact with automatic cache invalidation."""
+    key = _get_champion_cache_key()
+    return _load_cached_bundle(key)
 
 
 @st.cache_resource
@@ -119,20 +134,23 @@ def main():
     bundle = get_model_bundle()
     predictor = get_predictor()
 
-    # Prevent Streamlit metric value text truncation with ellipsis
+    # Prevent Streamlit metric value text truncation while avoiding column bleeding
     st.markdown(
         """
         <style>
         div[data-testid="stMetricValue"] {
             font-size: 1.45rem !important;
             white-space: normal !important;
-            word-break: normal !important;
+            word-break: break-word !important;
+            overflow-wrap: break-word !important;
             line-height: 1.25 !important;
         }
         div[data-testid="stMetricValue"] > div {
             white-space: normal !important;
-            text-overflow: unset !important;
-            overflow: visible !important;
+            word-break: break-word !important;
+            overflow-wrap: break-word !important;
+            text-overflow: ellipsis !important;
+            overflow: hidden !important;
         }
         </style>
         """,
@@ -755,9 +773,18 @@ def main():
 
         st.subheader("Active Champion Model")
         if champ_meta:
-            c1, c2, c3, c4 = st.columns(4)
-            c1.metric("Active Version", champ_meta.get("version"))
-            c1.caption(f"Algorithm: `{champ_meta.get('algorithm')}`")
+            c1, c2, c3, c4 = st.columns([1.5, 1, 1, 1])
+            with c1:
+                st.markdown(
+                    f"""
+                    <div style="padding: 1px 0;">
+                        <div style="font-size: 0.875rem; color: #9aa0a6; margin-bottom: 2px;">Active Version</div>
+                        <div style="font-size: 1.05rem; font-weight: 600; font-family: monospace; word-break: break-all;">{champ_meta.get('version')}</div>
+                    </div>
+                    """,
+                    unsafe_allow_html=True,
+                )
+                st.caption(f"Algorithm: `{champ_meta.get('algorithm')}`")
             test_m = champ_meta.get("test_metrics", {})
             c2.metric("Test PR-AUC", f"{test_m.get('pr_auc', 0.0):.4f}")
             c3.metric("Test Recall", f"{test_m.get('recall', 0.0):.4f}")
