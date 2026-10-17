@@ -5,6 +5,7 @@ import json
 import sys
 from pathlib import Path
 
+import numpy as np
 import pandas as pd
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
@@ -52,7 +53,7 @@ def main():
     print("[INFO] Computing model predictions for score distribution drift...")
     predictor = FraudPredictor()
     predictions = predictor.predict_batch(df.drop(columns=["Class"], errors="ignore"))
-    scores = [p.risk_score for p in predictions]
+    scores = np.array([p.risk_score for p in predictions], dtype=float)
 
     # Run Drift Analysis
     print("[INFO] Evaluating feature PSI and Kolmogorov-Smirnov statistics...")

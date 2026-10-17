@@ -1,6 +1,6 @@
-# 🛡️ FraudGuard AI — End-to-End Credit Card Fraud Detection & MLOps Platform
+# FraudGuard AI — End-to-End Credit Card Fraud Detection & MLOps Platform
 
-[![CI Pipeline](https://github.com/<your-username>/FraudGuard-AI/actions/workflows/ci.yml/badge.svg)](https://github.com/<your-username>/FraudGuard-AI/actions)
+[![CI Pipeline](https://github.com/conbott/Fraud-Guard-AI/actions/workflows/ci.yml/badge.svg)](https://github.com/conbott/Fraud-Guard-AI/actions/workflows/ci.yml)
 [![Python 3.11+](https://img.shields.io/badge/python-3.11%20%7C%203.12%20%7C%203.13-blue.svg)](https://www.python.org/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Code Style: Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
@@ -11,7 +11,7 @@ FraudGuard AI is a production-grade, zero-cost MLOps platform engineered for cre
 
 ---
 
-## 📌 Problem Statement & Motivation
+## Problem Statement & Motivation
 Credit card fraud costs global payment networks tens of billions of dollars annually. Building machine learning systems for financial fraud presents distinct challenges:
 1. **Extreme Class Imbalance:** Legitimate transactions account for over 99.8% of volume. Conventional accuracy is a deceptive metric—a model predicting all zeros achieves 99.83% accuracy while catching zero frauds.
 2. **Asymmetric Error Costs:** False negatives (missing a fraud) directly result in financial loss; false positives (blocking a legitimate customer card) cause customer churn and operational overhead.
@@ -22,7 +22,7 @@ FraudGuard AI solves these challenges with a rigorous, verified MLOps architectu
 
 ---
 
-## 🏗️ System Architecture & Workflow
+## System Architecture & Workflow
 
 ```mermaid
 flowchart TD
@@ -58,7 +58,7 @@ flowchart TD
 
 ---
 
-## 🔬 Benchmark Evaluation Results (Champion vs Baselines)
+## Benchmark Evaluation Results (Champion vs Baselines)
 
 Evaluated on held-out test data with decision threshold tuned strictly on the validation set:
 
@@ -72,8 +72,8 @@ Evaluated on held-out test data with decision threshold tuned strictly on the va
 
 ---
 
-## 🛠️ Technology Stack
-- **Core ML:** Python 3.11+, Scikit-Learn 1.9+, pandas, NumPy, SciPy, Joblib
+## Technology Stack
+- **Core ML:** Python 3.11+, Scikit-Learn 1.4+, pandas, NumPy, SciPy, Joblib
 - **API & Serving:** FastAPI, Uvicorn, Pydantic V2, HTTPX
 - **Dashboard UI:** Streamlit, Matplotlib, Seaborn
 - **Experiment Tracking:** MLflow (local file-based tracking)
@@ -83,7 +83,7 @@ Evaluated on held-out test data with decision threshold tuned strictly on the va
 
 ---
 
-## 🚀 Quickstart Guide (PowerShell / Windows)
+## Quickstart Guide (PowerShell / Windows)
 
 ### 1. Prerequisites Check
 Verify Python 3.11+ and Git are installed:
@@ -92,17 +92,11 @@ python --version
 git --version
 ```
 
-### 2. Set Up Virtual Environment & Dependencies
+### 2. Set Up Dependencies
 ```powershell
-# Create standard Python virtual environment
-python -m venv .venv
-
-# Activate environment
-.\.venv\Scripts\Activate.ps1
-
 # Upgrade pip and install all production & dev dependencies
 python -m pip install --upgrade pip
-pip install -r requirements-dev.txt
+python -m pip install -r requirements-dev.txt
 ```
 
 ### 3. Generate Test Fixtures & Initial Champion Model
@@ -116,31 +110,31 @@ python scripts/train.py --champion
 
 ### 4. Run Automated Test Suite (33 Tests, 100% Pass)
 ```powershell
-pytest tests/ -v --cov=src --cov-report=term-missing
+python -m pytest tests/ -v --cov=src --cov-report=term-missing
 ```
 
 ### 5. Launch the FastAPI Prediction Service
 ```powershell
-uvicorn src.api.app:app --host 127.0.0.1 --port 8000 --reload
+python -m uvicorn src.api.app:app --host 127.0.0.1 --port 8000
 ```
 - Interactive OpenAPI Docs: [http://localhost:8000/docs](http://localhost:8000/docs)
 - Health Check: [http://localhost:8000/health](http://localhost:8000/health)
 
 ### 6. Launch the Streamlit Interactive Dashboard
 ```powershell
-streamlit run app.py
+python -m streamlit run app.py
 ```
 - Access local dashboard at: [http://localhost:8501](http://localhost:8501)
 
 ### 7. Launch Local MLflow Experiment UI
 ```powershell
-mlflow ui --backend-store-uri mlruns
+python -m mlflow ui --port 5000
 ```
 - Access local experiment tracking at: [http://localhost:5000](http://localhost:5000)
 
 ---
 
-## 📡 REST API Examples
+## REST API Examples
 
 ### Single Transaction Scoring (`POST /predict`)
 ```powershell
@@ -173,7 +167,7 @@ Invoke-RestMethod -Uri "http://127.0.0.1:8000/predict" -Method Post -ContentType
 
 ---
 
-## 🏛️ Model Registry, Retraining & Rollback Workflow
+## Model Registry, Retraining & Rollback Workflow
 
 FraudGuard AI enforces quality gating before any retrained candidate model can replace the active Champion:
 
@@ -194,7 +188,7 @@ python scripts/retrain.py --rollback
 
 ---
 
-## 📈 Feature & Prediction Drift Monitoring
+## Feature & Prediction Drift Monitoring
 
 Detect statistical distribution shift between production transaction streams and training baseline features:
 ```powershell
@@ -226,7 +220,7 @@ PREDICTION DRIFT SUMMARY:
 
 ---
 
-## 🌐 Free Cloud Deployment (Streamlit Community Cloud)
+## Free Cloud Deployment (Streamlit Community Cloud)
 
 1. Push this repository to your personal public GitHub account.
 2. Sign in to [share.streamlit.io](https://share.streamlit.io/) with your GitHub account. *(No credit card or billing account required!)*
@@ -235,7 +229,7 @@ PREDICTION DRIFT SUMMARY:
 
 ---
 
-## 📂 Repository Structure
+## Repository Structure
 ```
 FraudGuard-AI/
 ├── .github/workflows/ci.yml         # GitHub Actions CI workflow
@@ -309,13 +303,13 @@ FraudGuard-AI/
 
 ---
 
-## 🔒 Security & Data Privacy
+## Security & Data Privacy
 - **Zero Raw Financial Data Committed:** Credit card numbers, CVVs, cardholder names, and bank credentials are completely excluded.
 - **Joblib Deserialization Hardening:** `ModelLoader` strictly validates internal dictionary structures and rejects arbitrary user-uploaded pickle files.
 - **API Defense:** Strict Pydantic schemas forbid unexpected extra attributes.
 
 ---
 
-## 📄 License & Attribution
+## License & Attribution
 - Project code licensed under the [MIT License](LICENSE).
 - Dataset attribution: Machine Learning Group (ULB) on European cardholders (September 2013).

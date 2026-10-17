@@ -169,12 +169,13 @@ class DriftMonitor:
 
         pred_drift = {}
         if risk_scores is not None and len(risk_scores) > 0:
+            scores_arr = np.asarray(risk_scores, dtype=float)
             pred_drift = {
-                "sample_count": len(risk_scores),
-                "mean_score": round(float(np.mean(risk_scores)), 4),
-                "median_score": round(float(np.median(risk_scores)), 4),
-                "p95_score": round(float(np.percentile(risk_scores, 95)), 4),
-                "high_risk_percentage": round(float((risk_scores >= 0.50).mean() * 100), 2),
+                "sample_count": len(scores_arr),
+                "mean_score": round(float(np.mean(scores_arr)), 4),
+                "median_score": round(float(np.median(scores_arr)), 4),
+                "p95_score": round(float(np.percentile(scores_arr, 95)), 4),
+                "high_risk_percentage": round(float((scores_arr >= 0.50).mean() * 100), 2),
             }
 
         return DatasetDriftReport(
