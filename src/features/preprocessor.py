@@ -22,13 +22,13 @@ class FraudFeaturePreprocessor(BaseEstimator, TransformerMixin):
     """
 
     def __init__(self, config: Optional[ModelConfig] = None):
-        self.config = config or load_model_config()
-        self.amount_col = self.config.amount_column
-        self.time_col = self.config.time_column
-        self.pca_cols = self.config.pca_features
-        self.log_transform_amount = self.config.preprocessing.log_transform_amount
-        self.drop_time = self.config.preprocessing.drop_time
-        self.scaler_type = self.config.preprocessing.scaler
+        cfg = config or load_model_config()
+        self.amount_col = cfg.amount_column
+        self.time_col = cfg.time_column
+        self.pca_cols = list(cfg.pca_features)
+        self.log_transform_amount = cfg.preprocessing.log_transform_amount
+        self.drop_time = cfg.preprocessing.drop_time
+        self.scaler_type = cfg.preprocessing.scaler
 
         # Scaler instance
         if self.scaler_type == "robust":
