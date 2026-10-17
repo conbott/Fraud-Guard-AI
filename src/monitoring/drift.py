@@ -103,10 +103,12 @@ class DriftMonitor:
     def reference_data(self) -> pd.DataFrame:
         if self._reference_df is None:
             if not self.ref_path.exists():
-                raise FileNotFoundError(
-                    f"Reference dataset not found at {self.ref_path}. "
-                    f"Train a champion model first to establish the baseline."
-                )
+                from src.config import load_model_config
+                from src.training.train import ModelTrainer
+
+                cfg = load_model_config()
+                trainer = ModelTrainer(cfg)
+                trainer.train_pipeline(is_champion=True)
             self._reference_df = pd.read_parquet(self.ref_path)
         return self._reference_df
 
