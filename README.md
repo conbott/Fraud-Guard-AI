@@ -1,6 +1,7 @@
 # FraudGuard AI — End-to-End Credit Card Fraud Detection & MLOps Platform
 
 [![CI Pipeline](https://github.com/conbott/Fraud-Guard-AI/actions/workflows/ci.yml/badge.svg)](https://github.com/conbott/Fraud-Guard-AI/actions/workflows/ci.yml)
+[![Live Demo](https://img.shields.io/badge/Live%20Demo-Streamlit%20Cloud-FF4B4B?logo=streamlit&logoColor=white)](https://conbott-fraudguard.streamlit.app)
 [![Python 3.11+](https://img.shields.io/badge/python-3.11%20%7C%203.12%20%7C%203.13-blue.svg)](https://www.python.org/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Code Style: Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
@@ -121,6 +122,8 @@ python -m uvicorn src.api.app:app --host 127.0.0.1 --port 8000
 - Health Check: [http://localhost:8000/health](http://localhost:8000/health)
 
 ### 6. Launch the Streamlit Interactive Dashboard
+- **Live Cloud Deployment:** [https://conbott-fraudguard.streamlit.app](https://conbott-fraudguard.streamlit.app)
+- **Local Dashboard:**
 ```powershell
 python -m streamlit run app.py
 ```
