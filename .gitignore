@@ -26,6 +26,7 @@ data/raw/*
 data/processed/*
 !data/processed/.gitkeep
 !data/processed/README.md
+!data/processed/reference_features.parquet
 # Keep synthetic fixtures for automated tests tracked
 data/synthetic/*
 !data/synthetic/.gitkeep

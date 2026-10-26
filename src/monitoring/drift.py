@@ -103,14 +103,35 @@ class DriftMonitor:
     def reference_data(self) -> pd.DataFrame:
         if self._reference_df is None:
             if not self.ref_path.exists():
-                from src.config import load_model_config
-                from src.training.train import ModelTrainer
-
-                cfg = load_model_config()
-                trainer = ModelTrainer(cfg)
-                trainer.train_pipeline(is_champion=True)
+                self._generate_reference_cache()
             self._reference_df = pd.read_parquet(self.ref_path)
         return self._reference_df
+
+    def _generate_reference_cache(self) -> None:
+        """Generate baseline reference features without modifying champion model."""
+        from src.config import load_model_config
+        from src.data.synthetic import create_test_fixtures
+        from src.inference.loader import ModelLoader
+
+        cfg = load_model_config()
+        champion = ModelLoader.load_champion()
+
+        if cfg.raw_data_path.exists():
+            df_raw = pd.read_csv(cfg.raw_data_path, nrows=2000)
+        else:
+            src_file = cfg.synthetic_path if cfg.synthetic_path.exists() else cfg.fixture_path
+            if not src_file.exists():
+                create_test_fixtures()
+                src_file = cfg.fixture_path
+            df_raw = pd.read_csv(src_file)
+
+        proc_feats = champion.preprocessor.transform(df_raw)
+        ref_df = pd.DataFrame(proc_feats, columns=champion.preprocessor.feature_names_)
+        if cfg.amount_column in df_raw.columns:
+            ref_df["Amount_original"] = df_raw[cfg.amount_column].values
+
+        self.ref_path.parent.mkdir(parents=True, exist_ok=True)
+        ref_df.to_parquet(self.ref_path, index=False)
 
     def evaluate_drift(
         self,

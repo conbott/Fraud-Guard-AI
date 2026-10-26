@@ -87,15 +87,4 @@ class ModelLoader:
         config = load_model_config()
         target_dir = champion_dir or config.champion_dir
         model_file = target_dir / "model.joblib"
-        try:
-            return cls.load_model_from_file(model_file)
-        except Exception as e:
-            # If artifact is missing and raw data is available locally, auto-train champion
-            if config.raw_data_path.exists():
-                from src.training.train import ModelTrainer
-                trainer = ModelTrainer(config)
-                trainer.train_pipeline(is_champion=True)
-                return cls.load_model_from_file(model_file)
-            raise RuntimeError(
-                f"Active champion model at {model_file} could not be loaded: {e}"
-            ) from e
+        return cls.load_model_from_file(model_file)
